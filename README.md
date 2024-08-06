@@ -1,13 +1,13 @@
-# TravelReservation
+# AccountManagement
 
 This Solidity program is a simple demo code for error handling. The purpose of the program is to demonstrate the error handling while creation and updation of travel reservations  for visa using require(), assert() and revert().
 
 ## Description
-A Solidity smart contract called `TravelReservation` was created to simplify the process of booking travel on the Ethereum network. It possesses the following qualities: <>>Locations: Four locations are listed in this list: {London, Dubai, Africa, Korea}.
+A Solidity smart contract called `AccountManagement` was created to simplify the process of booking travel on the Ethereum network. 
+>>`createAccount(string memory _name, uint _age)`=This function allows a user to create a new customer account.A new Customer struct is created and stored in the customers mapping with the user's address as the key. An `AccountCreated` event is emitted, logging the user's address, name, and age.
+>>`updateAccount(string memory _name, uint _age)`=This function allows a user to update their existing customer account.The `Customer` struct associated with the user's address is updated with the new name and age. An AccountUpdated event is emitted, logging the user's address, name, and age.
+>>`viewAccount() public view returns (Customer memory)`=This function allows a user to view their own customer account details.The function returns the Customer struct associated with the user's address.
 
->>Unique Booking ID: An ID is assigned to every booking by a counter ({nextBookingId}).Create Booking: With the use of this tool, users may add new bookings by inputting the traveler's details, destination, departure date, and ticket count. The first reservations are not confirmed.
->>Confirm Booking: By enabling verification, this feature ensures that bookings will never need to be validated again.
->>View Booking: Passengers may view the details of their own bookings using this feature, which also contains authorization checks to ensure that only authorized travelers can access themselves. reservations.
 
 ## Getting Started
 
@@ -20,60 +20,57 @@ To run this program, you can use Remix, an online Solidity IDE. To get started, 
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.7;
 
-contract TravelReservation {
+contract AccountManagement {
 
-    // Define an enum for different travel destinations
-    enum Location { London, Dubai, Africa, Korea }
-
-    // Structure to store travel reservation details
-    struct Reservation {
-        address customer;
-        Location location;
-        uint ticketCount;
-        bool isApproved;
+    // Structure to store customer account details
+    struct Customer {
+        bool exists;
+        string name;
+        uint age;
     }
 
-    // Mapping for storing reservations with unique identifiers
-    mapping(uint => Reservation) public reservations;
-    uint public nextReservationId = 1; // Keeps track of next reservation ID
+    // Mapping for storing customer accounts
+    mapping(address => Customer) public customers;
 
-    // Function to create a new travel reservation
-    function createReservation(address _customer, Location _location, uint _ticketCount) public {
-        require(_ticketCount > 0, "Ticket count must be greater than zero");
+    // Event for new account creation
+    event AccountCreated(address customer, string name, uint age);
 
-        Reservation memory newReservation = Reservation(_customer, _location, _ticketCount, false);
-        reservations[nextReservationId] = newReservation;
-        nextReservationId++;
+    // Event for account update
+    event AccountUpdated(address customer, string name, uint age);
+
+    // Function to create a new customer account
+    function createAccount(string memory _name, uint _age) public {
+        require(!customers[msg.sender].exists, "Account already exists");
+        require(bytes(_name).length > 0, "Name is required");
+        require(_age > 0, "Age must be greater than zero");
+
+        customers[msg.sender] = Customer(true, _name, _age);
+        emit AccountCreated(msg.sender, _name, _age);
     }
 
-    // Function to approve a reservation 
-    function approveReservation(uint _reservationId) public {
-        require(reservations[_reservationId].customer == msg.sender, "Only the customer can approve their reservation");
-        require(reservations[_reservationId].isApproved == false, "Reservation already approved");
+    // Function to update an existing customer account
+    function updateAccount(string memory _name, uint _age) public {
+        require(customers[msg.sender].exists, "Account does not exist");
+        require(bytes(_name).length > 0, "Name is required");
+        require(_age > 0, "Age must be greater than zero");
 
-        reservations[_reservationId].isApproved = true;
+        customers[msg.sender].name = _name;
+        customers[msg.sender].age = _age;
+        emit AccountUpdated(msg.sender, _name, _age);
     }
 
-    // Function to view reservation details 
-    function viewReservation(uint _reservationId) public view returns (Reservation memory) {
-        require(reservations[_reservationId].customer == msg.sender, "Unauthorized to view reservation");
-        return reservations[_reservationId];
-    }
-
-    // Function to cancel a reservation before it is approved
-    function cancelReservation(uint _reservationId) public {
-        require(reservations[_reservationId].customer == msg.sender, "Only the customer can cancel their reservation");
-        require(reservations[_reservationId].isApproved == false, "Cannot cancel an approved reservation");
-
-        delete reservations[_reservationId];
+    // Function to view customer account details
+    function viewAccount() public view returns (Customer memory) {
+        require(customers[msg.sender].exists, "Account does not exist");
+        return customers[msg.sender];
     }
 }
 ```
-To compile the code, click on the "Solidity Compiler" tab in the left-hand sidebar. Make sure the "Compiler" option is set to "0.8.7" (or another compatible version), and then click on the "Compile TravelBooking.sol" button.
+To compile the code, click on the "Solidity Compiler" tab in the left-hand sidebar. Make sure the "Compiler" option is set to "0.8.7" (or another compatible version), and then click on the "Compile AccountManagement.sol" button.
 
-Once the code is compiled, you can deploy the contract by clicking on the "Deploy & Run Transactions" tab in the left-hand sidebar. Select the "TravelBooking" contract from the dropdown menu, and then click on the "Deploy" button.
+Once the code is compiled, you can deploy the contract by clicking on the "Deploy & Run Transactions" tab in the left-hand sidebar. Select the "AccountManagement" contract from the dropdown menu, and then click on the "Deploy" button.
 
-Once the contract is deployed, you can interact with it. The `TravelReservation` Solidity contract enables users to manage travel bookings on the Ethereum blockchain. It supports destinations (London, Dubai, Africa, Korea) and stores booking details (traveler, destination, travel date, ticket count, confirmation status) in a mapping identified by unique booking IDs. Users can create bookings, which initially have an unconfirmed status, and confirm bookings later. Travelers can view their own booking details, ensuring privacy. The contract maintains a counter for the next booking ID, ensuring each booking is uniquely identified. The system includes functions to create, confirm, and view bookings with authorization checks for security.
+Once the contract is deployed, you can interact with it. The `AccountManagement` Solidity contract enables users to manage travel bookings on the Ethereum blockchain. 
 
 #### Author
 Mansi Shukla - Chandigarh University BE-C.S.E Students

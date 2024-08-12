@@ -1,13 +1,21 @@
-# AccountManagement
+# SchoolAdmission
 
-This Solidity program is a simple demo code for error handling. The purpose of the program is to demonstrate the error handling while creation and updation of travel reservations  for visa using require(), assert() and revert().
+This contract allows a school to manage the admission, withdrawal, and grade changes for students on the Ethereum blockchain."The purpose of the program is to demonstrate the error handling while  using require(), assert() and revert().
 
 ## Description
-A Solidity smart contract called `AccountManagement` was created to simplify the process of booking travel on the Ethereum network. 
->>`createAccount(string memory _name, uint _age)`=This function allows a user to create a new customer account.A new Customer struct is created and stored in the customers mapping with the user's address as the key. An `AccountCreated` event is emitted, logging the user's address, name, and age.
->>`updateAccount(string memory _name, uint _age)`=This function allows a user to update their existing customer account.The `Customer` struct associated with the user's address is updated with the new name and age. An AccountUpdated event is emitted, logging the user's address, name, and age.
->>`viewAccount() public view returns (Customer memory)`=This function allows a user to view their own customer account details.The function returns the Customer struct associated with the user's address.
-
+"The contract we’re looking at today is called SchoolAdmission. It’s designed to handle the lifecycle of a student within a school, from admission to potential withdrawal. The contract also allows for viewing student details and changing their grade level."
+1. `admitStudent`
+>>Purpose: Adds a new student to the school.
+>> Process: It creates a new Student struct and stores it in the students mapping with a unique ID, while also incrementing the nextStudentId.
+2. ` withdrawStudent`
+>>Purpose: Withdraws a student from the school.
+>>Process: The function checks that the student exists, is enrolled, and that the person calling the function is the student themselves.
+3. `getStudentDetails`
+>>Purpose: Retrieves the details of a specific student
+>>Process: The function checks that the student exists, is enrolled, and that the caller is either the student themselves or an authorized user.
+4. `changeGrade`
+>>Purpose: Changes the grade level of a specific student.
+>>Process: The function checks that the student exists, is enrolled, and that the caller is the student themselves.
 
 ## Getting Started
 
@@ -20,57 +28,78 @@ To run this program, you can use Remix, an online Solidity IDE. To get started, 
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.7;
 
-contract AccountManagement {
+contract SchoolAdmission {
 
-    // Structure to store customer account details
-    struct Customer {
-        bool exists;
+    enum Grade { Kindergarten, Elementary, MiddleSchool, HighSchool }
+
+    struct Student {
+        address studentAddress;
         string name;
-        uint age;
+        uint dateOfBirth;
+        Grade grade;
+        uint admissionDate;
+        bool isEnrolled;
     }
 
-    // Mapping for storing customer accounts
-    mapping(address => Customer) public customers;
+    mapping(uint => Student) public students;
+    uint public nextStudentId = 1;
 
-    // Event for new account creation
-    event AccountCreated(address customer, string name, uint age);
+    event StudentAdmitted(address studentAddress, uint admissionDate);
 
-    // Event for account update
-    event AccountUpdated(address customer, string name, uint age);
+    function admitStudent(
+        address _studentAddress,
+        string memory _name,
+        uint _dateOfBirth,
+        Grade _grade,
+        uint _admissionDate
+    ) public {
+        emit StudentAdmitted(_studentAddress, _admissionDate);
+        require(_admissionDate > block.timestamp, "Admission date must be in the future");
 
-    // Function to create a new customer account
-    function createAccount(string memory _name, uint _age) public {
-        require(!customers[msg.sender].exists, "Account already exists");
-        require(bytes(_name).length > 0, "Name is required");
-        require(_age > 0, "Age must be greater than zero");
-
-        customers[msg.sender] = Customer(true, _name, _age);
-        emit AccountCreated(msg.sender, _name, _age);
+        students[nextStudentId++] = Student(
+            _studentAddress,
+            _name,
+            _dateOfBirth,
+            _grade,
+            _admissionDate,
+            true
+        );
     }
 
-    // Function to update an existing customer account
-    function updateAccount(string memory _name, uint _age) public {
-        require(customers[msg.sender].exists, "Account does not exist");
-        require(bytes(_name).length > 0, "Name is required");
-        require(_age > 0, "Age must be greater than zero");
+    function withdrawStudent(uint _studentId) public {
+        Student storage student = students[_studentId];
+        require(student.studentAddress != address(0), "Student not found");
+        require(student.isEnrolled, "Student already withdrawn");
+        require(student.studentAddress == msg.sender, "You are not authorized to withdraw this student");
 
-        customers[msg.sender].name = _name;
-        customers[msg.sender].age = _age;
-        emit AccountUpdated(msg.sender, _name, _age);
+        student.isEnrolled = false;
     }
 
-    // Function to view customer account details
-    function viewAccount() public view returns (Customer memory) {
-        require(customers[msg.sender].exists, "Account does not exist");
-        return customers[msg.sender];
+    function getStudentDetails(uint _studentId) public view returns (Student memory) {
+        Student memory student = students[_studentId];
+        require(student.studentAddress != address(0), "Student not found");
+        require(student.isEnrolled, "Student is no longer enrolled");
+        require(student.studentAddress == msg.sender || msg.sender == address(0), "You are not authorized to view this student's details");
+
+        return student;
+    }
+
+    function changeGrade(uint _studentId, Grade _newGrade) public {
+        Student storage student = students[_studentId];
+        require(student.studentAddress != address(0), "Student not found");
+        require(student.isEnrolled, "Student is no longer enrolled");
+        require(student.studentAddress == msg.sender, "You are not authorized to change this student's grade");
+
+        student.grade = _newGrade;
     }
 }
+
 ```
-To compile the code, click on the "Solidity Compiler" tab in the left-hand sidebar. Make sure the "Compiler" option is set to "0.8.7" (or another compatible version), and then click on the "Compile AccountManagement.sol" button.
+To compile the code, click on the "Solidity Compiler" tab in the left-hand sidebar. Make sure the "Compiler" option is set to "0.8.7" (or another compatible version), and then click on the "Compile SchoolAdmission.sol" button.
 
-Once the code is compiled, you can deploy the contract by clicking on the "Deploy & Run Transactions" tab in the left-hand sidebar. Select the "AccountManagement" contract from the dropdown menu, and then click on the "Deploy" button.
+Once the code is compiled, you can deploy the contract by clicking on the "Deploy & Run Transactions" tab in the left-hand sidebar. Select the "SchoolAdmission" contract from the dropdown menu, and then click on the "Deploy" button.
 
-Once the contract is deployed, you can interact with it. The `AccountManagement` Solidity contract enables users to manage travel bookings on the Ethereum blockchain. 
+Once the contract is deployed, you can interact with it. The `SchoolAdmission` Solidity contract enables users to manage travel bookings on the Ethereum blockchain. 
 
 #### Author
 Mansi Shukla - Chandigarh University BE-C.S.E Students
